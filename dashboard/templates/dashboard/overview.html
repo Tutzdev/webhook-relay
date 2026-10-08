@@ -1,0 +1,102 @@
+{% extends "dashboard/base.html" %}
+{% load dashboard_extras %}
+{% block head %}<meta http-equiv="refresh" content="15">{% endblock %}
+{% block heading %}Overview{% endblock %}
+{% block content %}
+<div class="kpis">
+  <article class="kpi">
+    <p class="kpi-label">Events · 24h</p>
+    <p class="kpi-value">{{ overview.events_24h }}</p>
+    <p class="kpi-sub">{{ overview.attempts_24h }} delivery attempts</p>
+  </article>
+  <article class="kpi {% if overview.success_rate_24h is not None and overview.success_rate_24h < 90 %}kpi-bad{% else %}kpi-ok{% endif %}">
+    <p class="kpi-label">Success rate · 24h</p>
+    <p class="kpi-value">{% if overview.success_rate_24h is None %}—{% else %}{{ overview.success_rate_24h }}%{% endif %}</p>
+    <p class="kpi-sub">2xx answers over all attempts</p>
+  </article>
+  <article class="kpi">
+    <p class="kpi-label">Avg latency · 24h</p>
+    <p class="kpi-value">{% if overview.avg_latency_ms_24h is None %}—{% else %}{{ overview.avg_latency_ms_24h }} ms{% endif %}</p>
+    <p class="kpi-sub">Time until the receiver answered</p>
+  </article>
+  <article class="kpi">
+    <p class="kpi-label">In flight</p>
+    <p class="kpi-value">{{ overview.in_flight }}</p>
+    <p class="kpi-sub">Pending or retrying</p>
+  </article>
+  <article class="kpi {% if overview.dead_letters %}kpi-bad{% endif %}">
+    <p class="kpi-label">Dead letters</p>
+    <p class="kpi-value">{{ overview.dead_letters }}</p>
+    <p class="kpi-sub">Gave up after every retry</p>
+  </article>
+  <article class="kpi {% if overview.disabled_endpoints %}kpi-bad{% endif %}">
+    <p class="kpi-label">Disabled endpoints</p>
+    <p class="kpi-value">{{ overview.disabled_endpoints }}</p>
+    <p class="kpi-sub">Circuit breaker open</p>
+  </article>
+</div>
+
+<section class="card">
+  <div class="card-head"><h2>Endpoint health</h2></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Endpoint</th><th>Tenant</th><th>Status</th><th class="num">Success · 24h</th><th class="num">Failing in a row</th><th class="num">Dead</th><th></th></tr></thead>
+      <tbody>
+      {% for endpoint in endpoints %}
+        <tr>
+          <td><strong>{{ endpoint.url }}</strong>{% if endpoint.description %}<br><span class="muted">{{ endpoint.description }}</span>{% endif %}</td>
+          <td>{{ endpoint.tenant.name }}</td>
+          <td><span class="badge badge-{{ endpoint.status }}" title="{{ endpoint.disabled_reason }}">{{ endpoint.get_status_display }}</span></td>
+          <td class="num">{{ endpoint.succeeded_24h|percentage:endpoint.attempts_24h }}</td>
+          <td class="num">{{ endpoint.consecutive_failures }}</td>
+          <td class="num">{{ endpoint.dead }}</td>
+          <td>
+            <div class="row-actions">
+              {% if endpoint.status == "disabled" %}
+                <form method="post" action="{% url 'dashboard:enable-endpoint' endpoint.id %}">{% csrf_token %}<button class="btn-link">Enable</button></form>
+              {% elif endpoint.dead %}
+                <form method="post" action="{% url 'dashboard:replay-dead' endpoint.id %}">{% csrf_token %}<button class="btn-link">Replay dead</button></form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="7" class="empty">No endpoints yet. Create one through the API or run <code>seed_demo</code>.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="card">
+  <div class="card-head">
+    <h2>Recent deliveries</h2>
+    <nav class="chips">
+      <a class="chip {% if not status_filter %}active{% endif %}" href="{% url 'dashboard:overview' %}">All</a>
+      {% for value, label in statuses %}
+        <a class="chip {% if status_filter == value %}active{% endif %}" href="?status={{ value }}">{{ label }}</a>
+      {% endfor %}
+    </nav>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Event</th><th>Endpoint</th><th>Status</th><th class="num">Attempts</th><th>Last answer</th><th>Next try</th><th>Created</th></tr></thead>
+      <tbody>
+      {% for delivery in deliveries %}
+        <tr class="clickable">
+          <td><a href="{% url 'dashboard:delivery' delivery.id %}"><strong>{{ delivery.event.event_type }}</strong></a></td>
+          <td class="muted">{{ delivery.endpoint.url|truncatechars:48 }}</td>
+          <td><span class="badge badge-{{ delivery.status }}">{{ delivery.get_status_display }}</span></td>
+          <td class="num">{{ delivery.attempt_count }}</td>
+          <td>{% if delivery.last_status_code %}<code>{{ delivery.last_status_code }}</code>{% elif delivery.last_error %}<span class="muted">{{ delivery.last_error|truncatechars:32 }}</span>{% else %}—{% endif %}</td>
+          <td class="muted">{% if delivery.next_attempt_at and delivery.status == "pending" %}{{ delivery.next_attempt_at|timeuntil }}{% else %}—{% endif %}</td>
+          <td class="muted">{{ delivery.created_at|timesince }} ago</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="7" class="empty">No deliveries yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

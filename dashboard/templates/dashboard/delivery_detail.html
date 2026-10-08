@@ -1,0 +1,55 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Delivery · Relay{% endblock %}
+{% block heading %}Delivery{% endblock %}
+{% block content %}
+<p><a class="btn-link" href="{% url 'dashboard:overview' %}">← Back to overview</a></p>
+
+<div class="detail-grid">
+  <section class="card card-body">
+    <p class="kpi-label">Event</p>
+    <h2>{{ delivery.event.event_type }}</h2>
+    <dl class="facts">
+      <dt>Status</dt><dd><span class="badge badge-{{ delivery.status }}">{{ delivery.get_status_display }}</span></dd>
+      <dt>Endpoint</dt><dd>{{ delivery.endpoint.url }}</dd>
+      <dt>Tenant</dt><dd>{{ delivery.endpoint.tenant.name }}</dd>
+      <dt>webhook-id</dt><dd><code>{{ delivery.event.message_id }}</code></dd>
+      <dt>Attempts</dt><dd>{{ delivery.attempt_count }} in this cycle</dd>
+      {% if delivery.next_attempt_at and delivery.status == "pending" %}<dt>Next try</dt><dd>in {{ delivery.next_attempt_at|timeuntil }}</dd>{% endif %}
+    </dl>
+    {% if delivery.is_finished %}
+      <form method="post" action="{% url 'dashboard:replay-delivery' delivery.id %}">
+        {% csrf_token %}
+        <button class="btn btn-primary" type="submit">Replay delivery</button>
+      </form>
+    {% endif %}
+  </section>
+
+  <section class="card card-body">
+    <p class="kpi-label">Payload</p>
+    <pre class="payload">{{ payload }}</pre>
+  </section>
+</div>
+
+<section class="card">
+  <div class="card-head"><h2>Attempts</h2></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>Result</th><th>HTTP</th><th class="num">Duration</th><th>Error / response</th><th>When</th></tr></thead>
+      <tbody>
+      {% for attempt in delivery.attempts.all %}
+        <tr>
+          <td>{{ attempt.number }}</td>
+          <td><span class="badge {% if attempt.succeeded %}badge-succeeded{% else %}badge-dead{% endif %}">{% if attempt.succeeded %}OK{% else %}Failed{% endif %}</span></td>
+          <td>{% if attempt.status_code %}<code>{{ attempt.status_code }}</code>{% else %}—{% endif %}</td>
+          <td class="num">{{ attempt.duration_ms }} ms</td>
+          <td class="muted">{{ attempt.error|default:attempt.response_excerpt|truncatechars:80 }}</td>
+          <td class="muted">{{ attempt.created_at|date:"M j, H:i:s" }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6" class="empty">No attempts yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Relay{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'dashboard/styles.css' %}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <p class="brand">Relay</p>
+    <nav>
+      <a class="nav-item {% if request.resolver_match.url_name == 'overview' %}active{% endif %}" href="{% url 'dashboard:overview' %}">Overview</a>
+      <a class="nav-item" href="{% url 'admin:index' %}">Admin</a>
+    </nav>
+    <form method="post" action="{% url 'dashboard:logout' %}" class="nav-bottom">
+      {% csrf_token %}
+      <button class="nav-item" type="submit">Sign out</button>
+    </form>
+  </aside>
+  <main class="main">
+    <header class="topbar">
+      <h1>{% block heading %}{% endblock %}</h1>
+      <p class="muted">{{ request.user.get_username }}</p>
+    </header>
+    <div class="view">
+      {% for message in messages %}
+        <p class="flash flash-{{ message.tags }}">{{ message }}</p>
+      {% endfor %}
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+</div>
+</body>
+</html>

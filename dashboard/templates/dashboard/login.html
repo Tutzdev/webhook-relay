@@ -1,0 +1,22 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign in · Relay</title>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'dashboard/styles.css' %}">
+</head>
+<body class="login">
+  <form method="post" class="login-card">
+    {% csrf_token %}
+    <p class="brand brand-dark">Relay</p>
+    <h1>Sign in</h1>
+    <p class="muted">Staff access to webhook deliveries.</p>
+    <label>Username <input name="username" autocomplete="username" required autofocus></label>
+    <label>Password <input name="password" type="password" autocomplete="current-password" required></label>
+    {% if form.errors %}<p class="form-error">Invalid credentials or not a staff account.</p>{% endif %}
+    <button class="btn btn-primary" type="submit">Sign in</button>
+  </form>
+</body>
+</html>

@@ -2,6 +2,7 @@
 
 Reliable webhook delivery as a service: signed requests, retries with exponential backoff and jitter, a dead-letter queue, a circuit breaker per endpoint and replay.
 
+[![CI](https://github.com/Tutzdev/webhook-relay/actions/workflows/ci.yml/badge.svg)](https://github.com/Tutzdev/webhook-relay/actions/workflows/ci.yml)
 ![Python 3.12](https://img.shields.io/badge/Python-3.12-312e81?style=flat-square&logo=python&logoColor=white)
 ![Django 5.2](https://img.shields.io/badge/Django-5.2-312e81?style=flat-square&logo=django&logoColor=white)
 ![DRF](https://img.shields.io/badge/Django_REST_Framework-3.16-312e81?style=flat-square&logo=django&logoColor=white)

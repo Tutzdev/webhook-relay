@@ -1,0 +1,19 @@
+[project]
+name = "webhook-relay"
+version = "0.1.0"
+description = "Reliable webhook delivery: signed requests, retries with backoff, dead letters and a circuit breaker."
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings_test"
+python_files = ["test_*.py"]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+extend-exclude = ["*/migrations/*"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
